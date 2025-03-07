@@ -155,6 +155,7 @@ const Dashboard = () => {
           isEditMode={isEditMode}
           onComponentsChange={handleComponentsChange}
           onAddComponentClick={() => setIsAddComponentModalOpen(true)}
+          endpoints={endpoints}
         />
         
         <AddComponentModal
