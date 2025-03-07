@@ -32,7 +32,7 @@ const Index = () => {
 
   const handleCreateDashboard = async () => {
     try {
-      const newDashboard: Partial<Dashboard> = {
+      const newDashboard = {
         name: "New Dashboard",
         description: "A new dashboard",
         components: [],
