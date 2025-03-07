@@ -1,5 +1,4 @@
-
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
 import { 
   ApiEndpoint, 
   BarChartData, 
@@ -102,7 +101,6 @@ export async function fetchCandlestickData(
   }
 }
 
-// Simulated API for dashboards (would be replaced with real API)
 let mockDashboards: any[] = [];
 
 export async function fetchDashboards() {

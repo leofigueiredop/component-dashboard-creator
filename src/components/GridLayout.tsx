@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ReactElement } from 'react';
 import { cn } from '@/lib/utils';
 import { ComponentConfig } from '@/types/api';
 
@@ -8,6 +8,14 @@ interface GridLayoutProps {
   onComponentsChange: (components: ComponentConfig[]) => void;
   editable?: boolean;
   children: React.ReactNode;
+}
+
+interface ExtendedElementProps {
+  draggable?: boolean;
+  onDragStart?: () => void;
+  style?: React.CSSProperties;
+  className?: string;
+  id?: string;
 }
 
 export function GridLayout({
@@ -82,10 +90,10 @@ export function GridLayout({
         {React.Children.map(children, (child) => {
           if (!React.isValidElement(child)) return null;
           
-          const id = child.props.id;
+          const id = child.props.id || child.props.config?.id;
           if (!id || !positions[id]) return null;
           
-          return React.cloneElement(child, {
+          return React.cloneElement(child as ReactElement<ExtendedElementProps>, {
             draggable: editable,
             onDragStart: () => handleDragStart(id),
             style: {

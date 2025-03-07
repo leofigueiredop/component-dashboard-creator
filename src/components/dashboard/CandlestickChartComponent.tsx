@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,8 +12,10 @@ import {
   YAxis, 
   CartesianGrid, 
   Tooltip, 
-  Legend 
+  Legend,
+  TooltipProps
 } from "recharts";
+import { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 
 interface CandlestickChartComponentProps {
   config: ComponentConfig;
@@ -40,10 +41,8 @@ export function CandlestickChartComponent({ config, id, className }: Candlestick
       }
       
       try {
-        // Fetch candlestick data
         const candlestickData = await fetchCandlestickData(symbol, timeframe);
         
-        // Fetch overlay data from additional sources
         const overlayPromises = (config.sources || []).map(async (source, index) => {
           try {
             const data = await fetchDataForEndpoint(source);
@@ -60,7 +59,6 @@ export function CandlestickChartComponent({ config, id, className }: Candlestick
         const overlayResults = await Promise.all(overlayPromises);
         const validOverlays = overlayResults.filter(Boolean);
         
-        // Process the data for the chart
         if (candlestickData.length > 0) {
           const processedData = candlestickData.map((candle: any) => {
             const result: any = {
@@ -70,7 +68,6 @@ export function CandlestickChartComponent({ config, id, className }: Candlestick
               low: candle.low,
               close: candle.close,
               volume: candle.volume,
-              // For candlestick representation in recharts
               candleHeight: candle.high - candle.low,
               candleY: candle.low,
               bodyHeight: Math.abs(candle.close - candle.open),
@@ -78,7 +75,6 @@ export function CandlestickChartComponent({ config, id, className }: Candlestick
               color: candle.close >= candle.open ? "#00C49F" : "#FF4D4F"
             };
             
-            // Add overlay data points if available
             validOverlays.forEach((overlay, index) => {
               if (!overlay) return;
               
@@ -105,6 +101,27 @@ export function CandlestickChartComponent({ config, id, className }: Candlestick
     
     loadData();
   }, [config]);
+
+  const customTooltipFormatter = (value: ValueType, name: NameType) => {
+    if (name === 'volume') return [Number(value).toLocaleString(), "Volume"];
+    
+    if (typeof name === 'string') {
+      if (name.startsWith('overlay')) return [Number(value).toLocaleString(), `Overlay ${name.slice(-1)}`];
+      return [Number(value).toFixed(2), name.charAt(0).toUpperCase() + name.slice(1)];
+    }
+    
+    return [value, name];
+  };
+
+  const customLabelFormatter = (label: string) => {
+    return new Date(label).toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   return (
     <Card id={id} className={className}>
@@ -145,22 +162,11 @@ export function CandlestickChartComponent({ config, id, className }: Candlestick
                   tick={{ fontSize: 12 }}
                 />
                 <Tooltip 
-                  formatter={(value, name) => {
-                    if (name === 'volume') return [Number(value).toLocaleString(), "Volume"];
-                    if (name.startsWith('overlay')) return [Number(value).toLocaleString(), `Overlay ${name.slice(-1)}`];
-                    return [Number(value).toFixed(2), name.charAt(0).toUpperCase() + name.slice(1)];
-                  }}
-                  labelFormatter={(label) => new Date(label).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+                  formatter={customTooltipFormatter}
+                  labelFormatter={customLabelFormatter}
                 />
                 <Legend />
                 
-                {/* Candlestick body */}
                 <Bar
                   dataKey="bodyHeight"
                   yAxisId="price"
@@ -186,7 +192,6 @@ export function CandlestickChartComponent({ config, id, className }: Candlestick
                   name="Price"
                 />
                 
-                {/* Candlestick wicks */}
                 <Bar
                   dataKey="candleHeight"
                   yAxisId="price"
@@ -212,7 +217,6 @@ export function CandlestickChartComponent({ config, id, className }: Candlestick
                   name="Price Range"
                 />
                 
-                {/* Volume */}
                 <Bar 
                   dataKey="volume" 
                   yAxisId="volume" 
@@ -221,10 +225,8 @@ export function CandlestickChartComponent({ config, id, className }: Candlestick
                   name="Volume"
                 />
                 
-                {/* Overlays */}
                 {(config.sources || []).map((_, index) => {
                   const overlayKey = `overlay${index + 1}`;
-                  // Check if we have any data for this overlay
                   const hasData = chartData.some(item => item[overlayKey] !== undefined);
                   
                   if (!hasData) return null;
